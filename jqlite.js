@@ -1,5 +1,5 @@
 /*!
- * GIT: https://github.com/shrekshrek/jslite
+ * GIT: https://github.com/shrekshrek/jqlite
  **/
 
 (function (global, factory) {
