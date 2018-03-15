@@ -113,25 +113,15 @@
             return parent !== node && parent.contains(node);
         },
 
-        each: function (elems, callback) {
+        each: function (elems, callback, context) {
             // elems.forEach(callback);//for效率比forEach高，所以代替之
             for (var i = 0; i < elems.length; i++) {
-                callback.call(this, elems[i], i);
+                callback.call(context || this, elems[i], i);
             }
         },
 
         getJSON: function (url, success) {
-            var request = new XMLHttpRequest();
-            request.open('GET', url, true);
-
-            request.onload = function () {
-                if (this.status >= 200 && this.status < 400) {
-                    var data = JSON.parse(this.response);
-                    success(data);
-                }
-            };
-
-            request.send();
+            $.ajax({type: 'GET', url: url, success: success});
         },
 
         ajax: function (obj) {
@@ -199,9 +189,7 @@
         },
 
         each: function (callback) {
-            for (var i = 0; i < this.length; i++) {
-                callback.call(this, this[i], i);
-            }
+            $.each(this, callback, this);
             return this;
         },
 
