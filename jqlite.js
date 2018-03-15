@@ -9,7 +9,7 @@
 }(this, (function () {
     'use strict';
 
-    var tempArray = [], slice = tempArray.slice;
+    var tempArray = [], slice = tempArray.slice, indexOf = tempArray.indexOf;
     var tempDiv = document.createElement('div');
 
     function isObject(value) {
@@ -155,17 +155,15 @@
         },
 
         eq: function (idx) {
-            return idx === -1 ? slice.call(idx) : slice.call(idx, idx + 1);
+            return $(idx === -1 ? slice.call(this, idx) : slice.call(this, idx, idx + 1));
         },
 
         first: function () {
-            var el = this[0];
-            return el && !isObject(el) ? el : $(el);
+            return this.length ? this.eq(0) : null;
         },
 
         last: function () {
-            var el = this[this.length - 1];
-            return el && !isObject(el) ? el : $(el);
+            return this.length ? this.eq(this.length - 1) : null;
         },
 
         find: function (selector) {
@@ -194,8 +192,8 @@
         },
 
         empty: function () {
-            return this.each(function () {
-                this.innerHTML = ''
+            return this.each(function (el) {
+                el.innerHTML = '';
             });
         },
 
@@ -292,15 +290,24 @@
             return this;
         },
 
+        show: function () {
+            this.css('display', 'block');
+        },
+
+        hide: function () {
+            this.css('display', 'none');
+        },
+
         index: function (element) {
-            return element ? this.indexOf($(element)[0]) : this.parent().children().indexOf(this[0]);
+            return element ? indexOf.call(this, $(element)[0]) : indexOf.call(this.parent().children(), this[0]);
         },
 
         hasClass: function (className) {
+            var has = false;
             this.each(function (el) {
-                if (el.classList.contains(className)) return true;
+                if (el.classList.contains(className)) has = true;
             });
-            return false;
+            return has;
         },
 
         addClass: function (className) {
