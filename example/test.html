@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+    <script src="../jqlite.js"></script>
+    <!--<script src="./js/jquery-3.2.1.min.js"></script>-->
+</head>
+
+<body>
+<div id="div1">
+    <div class="div2" gaga="gaew">
+        <div class="div3"></div>
+        <p class="div4">41</p>
+        <div class="div5">51</div>
+        <input class="input" value="btn"/>
+    </div>
+    <div class="div3 test1"></div>
+    <div class="div4">42</div>
+</div>
+
+
+<div class="div2">
+    <div class="div3"></div>
+    <div class="div4">43</div>
+</div>
+
+<div class="div2"></div>
+<div class="div4">44</div>
+
+<script>
+    console.log($('p.div4').replaceWith('<canvas></canvas>'));
+
+    $('.div5').on('lalal', function (evt) {
+        console.log(this, evt);
+    });
+
+    $('.div5').trigger('lalal', {n: 1, m: 2});
+    $('.div5').trigger('lalal', {n: 3, m: 4});
+
+</script>
+
+</body>
+</html>
