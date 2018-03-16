@@ -6,3 +6,89 @@ Jquery类似的库有不少，要么文件太大了，要么功能不合意，�
 https://github.com/jquery/jquery  
 https://github.com/madrobby/zepto  
 https://github.com/kiltjs/jqlite  
+
+
+# API
+
+$(selector|node|function) 默认方法  
+
+静态方法：  
+类型判断方法
+$.isObject()
+$.isFunction()
+$.isString()
+$.isNumber()
+$.isBoolean()
+$.isArray()
+$.isDate()
+$.isRegExp()
+$.isElement()
+
+$.contains(parent, node)  
+$.each(elems, callback, context)  
+
+ajax请求方法
+$.getJSON({  
+    url:'',  
+    success:function,  
+});  
+
+$.ajax({  
+    url:'',  
+    type:'POST|GET',  
+    data:{}|'',  
+    success:function,  
+    error:function  
+});  
+
+实例方法：  
+node节点查找方法
+$obj.get(index)  
+$obj.eq(index)  
+$obj.first()  
+$obj.last()  
+$obj.find(selector)  
+$obj.add(selector, context)  
+$obj.parent()  
+$obj.children()  
+
+$obj.each(index)  
+
+
+节点内容操作方法  
+$obj.empty()  
+$obj.html()  
+$obj.text()  
+$obj.val()  
+$obj.data()  
+$obj.attr()  
+$obj.prop()  
+$obj.css()  
+
+$obj.show()  
+$obj.hide()  
+$obj.toggle()  
+
+$obj.index()  
+
+节点class操作方法  
+$obj.hasClass(className)  
+$obj.addClass(className)  
+$obj.removeClass(className)  
+$obj.toggleClass(className)  
+
+节点操作方法  
+$obj.clone()  
+$obj.remove()  
+$obj.append(context)  
+$obj.appendTo(context)  
+$obj.prepend(context)  
+$obj.prependTo(context)  
+$obj.before(context)  
+$obj.insertBefore(context)  
+$obj.after(context)  
+$obj.insertAfter(context)  
+$obj.replaceWith(context)  
+
+
+

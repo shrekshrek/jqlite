@@ -264,10 +264,54 @@
             return this;
         },
 
+        data: function (key, value) {
+            if (value !== undefined) {
+                this.each(function (el) {
+                    el.dataset[key] = value;
+                });
+            } else if (key instanceof Object) {
+                for (var k in key) {
+                    this.data(k, key[k]);
+                }
+            } else if (this[0]) {
+                return this[0].dataset[key];
+            }
+            return this;
+        },
+
+        attr: function (key, value) {
+            if (value !== undefined) {
+                this.each(function (el) {
+                    el.setAttribute(key, value);
+                });
+            } else if (key instanceof Object) {
+                for (var k in key) {
+                    this.attr(k, key[k]);
+                }
+            } else if (this[0]) {
+                return this[0].getAttribute(key);
+            }
+            return this;
+        },
+
+        prop: function (key, value) {
+            if (value !== undefined) {
+                this.each(function (el) {
+                    el[key] = value;
+                });
+            } else if (key instanceof Object) {
+                for (var k in key) {
+                    this.prop(k, key[k]);
+                }
+            } else if (this[0]) {
+                return this[0][key];
+            }
+            return this;
+        },
+
         css: function (key, value) {
             if (value !== undefined) {
                 value = (value instanceof Function) ? value() : (value instanceof Number ? (value + 'px') : value);
-
                 if (typeof value === 'string' && /^\+=|\-=/.test(value)) {
                     value = (value.charAt(0) === '-') ? -parseFloat(value.substr(2)) : parseFloat(value.substr(2));
 
@@ -279,7 +323,6 @@
                         el.style[key] = value;
                     });
                 }
-                return this;
             } else if (key instanceof Object) {
                 for (var k in key) {
                     this.css(k, key[k]);
@@ -296,6 +339,13 @@
 
         hide: function () {
             this.css('display', 'none');
+        },
+
+        toggle: function () {
+            return this.each(function (el) {
+                var $el = $(el);
+                $el.css("display") == "none" ? el.show() : el.hide();
+            })
         },
 
         index: function (element) {
@@ -386,6 +436,10 @@
         insertAfter: function (context) {
             $(context).after(this);
             return this;
+        },
+
+        replaceWith: function (context) {
+            return this.before(context).remove();
         },
 
     });
