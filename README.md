@@ -75,6 +75,10 @@ $obj.after(context)
 $obj.insertAfter(context)  
 $obj.replaceWith(context)  
 
+事件方法  
+$obj.on(eventName, listener)  
+$obj.off(eventName, listener)  
+$obj.trigger(eventName, data)  
 
 
 

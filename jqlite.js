@@ -442,6 +442,28 @@
             return this.before(context).remove();
         },
 
+        on: function (eventName, listener) {
+            return this.each(function (el) {
+                el.addEventListener(eventName, listener);
+            });
+        },
+
+        off: function (eventName, listener) {
+            return this.each(function (el) {
+                el.removeEventListener(eventName, listener);
+            });
+        },
+
+        trigger: function (eventName, data) {
+            return this.each(function (el) {
+                var event = document.createEvent('HTMLEvents');
+                event.data = data;
+                event.initEvent(eventName, true, true);
+                el.dispatchEvent(event);
+            });
+        }
+
+
     });
 
     $Obj.prototype.$ = $Obj.prototype.find;
