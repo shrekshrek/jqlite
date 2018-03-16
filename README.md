@@ -23,9 +23,9 @@ $.contains(parent, node)
 $.each(elems, callback, context)  
 
 ajax请求方法  
-$.getJSON({url:'',success:function,});  
+$.getJSON({url:'', success:function});  
 
-$.ajax({url:'',type:'POST|GET',data:{}|'',success:function,error:function});  
+$.ajax({url:'', type:'POST|GET', data:{}|'', success:function, error:function});  
 
 实例方法：  
 node节点查找方法
