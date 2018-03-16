@@ -2,11 +2,6 @@
 
 Jquery类似的库有不少，要么文件太大了，要么功能不合意，最后根据自己需要做的精简版，只考虑移动端的使用环境。  
 
-参考自Jquery，zepto，jqlite。  
-https://github.com/jquery/jquery  
-https://github.com/madrobby/zepto  
-https://github.com/kiltjs/jqlite  
-
 
 # API
 
@@ -52,24 +47,23 @@ $obj.add(selector, context)
 $obj.parent()  
 $obj.children()  
 
-$obj.each(index)  
-
+$obj.each(callback)  
 
 节点内容操作方法  
 $obj.empty()  
-$obj.html()  
-$obj.text()  
-$obj.val()  
-$obj.data()  
-$obj.attr()  
-$obj.prop()  
-$obj.css()  
+$obj.html(value| )  
+$obj.text(value| )  
+$obj.val(value| )  
+$obj.data(key, value)  
+$obj.attr(key, value)  
+$obj.prop(key, value)  
+$obj.css(key, value)  
 
 $obj.show()  
 $obj.hide()  
 $obj.toggle()  
 
-$obj.index()  
+$obj.index(index| )  
 
 节点class操作方法  
 $obj.hasClass(className)  
@@ -92,3 +86,8 @@ $obj.replaceWith(context)
 
 
 
+
+参考自Jquery，zepto，jqlite。  
+https://github.com/jquery/jquery  
+https://github.com/madrobby/zepto  
+https://github.com/kiltjs/jqlite  
