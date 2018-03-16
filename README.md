@@ -8,16 +8,16 @@ Jquery类似的库有不少，要么文件太大了，要么功能不合意，�
 $(selector|node|function) 默认方法  
 
 静态方法：  
-类型判断方法
-$.isObject()
-$.isFunction()
-$.isString()
-$.isNumber()
-$.isBoolean()
-$.isArray()
-$.isDate()
-$.isRegExp()
-$.isElement()
+类型判断方法  
+$.isObject()  
+$.isFunction()  
+$.isString()  
+$.isNumber()  
+$.isBoolean()  
+$.isArray()  
+$.isDate()  
+$.isRegExp()  
+$.isElement()  
 
 $.contains(parent, node)  
 $.each(elems, callback, context)  
