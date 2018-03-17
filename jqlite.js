@@ -116,7 +116,7 @@
         each: function (elems, callback, context) {
             // elems.forEach(callback);//for效率比forEach高，所以代替之
             for (var i = 0; i < elems.length; i++) {
-                callback.call(context || this, elems[i], i);
+                callback.call(context || elems, elems[i], i);
             }
         },
 
