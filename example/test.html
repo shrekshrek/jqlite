@@ -31,7 +31,9 @@
 <div class="div4">44</div>
 
 <script>
-    console.log($('p.div4').replaceWith('<canvas></canvas>'));
+    console.log($('.div4').each(function(el, i){
+        console.log(el, i, this);
+    }));
 
     $('.div5').on('lalal', function (evt) {
         console.log(this, evt);

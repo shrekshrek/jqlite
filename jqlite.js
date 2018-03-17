@@ -187,7 +187,7 @@
         },
 
         each: function (callback) {
-            $.each(this, callback, this);
+            $.each(this, callback);
             return this;
         },
 
