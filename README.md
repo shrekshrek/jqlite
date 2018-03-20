@@ -50,6 +50,9 @@ $obj.attr(key, value)
 $obj.prop(key, value)  
 $obj.css(key, value)  
 
+$obj.width(outer)  
+$obj.height(outer)  
+
 $obj.show()  
 $obj.hide()  
 $obj.toggle()  

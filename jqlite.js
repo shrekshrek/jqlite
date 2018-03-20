@@ -231,14 +231,14 @@
             return 0 in arguments ?
                 this.each(function (el) {
                     el.innerHTML = html;
-                }) : (0 in this ? this[0].innerHTML : null)
+                }) : (0 in this ? this[0].innerHTML : null);
         },
 
         text: function (text) {
             return 0 in arguments ?
                 this.each(function (el) {
                     el.textContent = text;
-                }) : (0 in this ? this.textContent : null)
+                }) : (0 in this ? this.textContent : null);
         },
 
         val: function (value) {
@@ -333,6 +333,18 @@
             return this;
         },
 
+        width: function (outer) {
+            if (!this.length) return null;
+            var style = window.getComputedStyle(this[0]);
+            return (outer ? parseInt(style.marginLeft) + parseInt(style.marginRight) : 0) + this[0].offsetWidth;
+        },
+
+        height: function (outer) {
+            if (!this.length) return null;
+            var style = window.getComputedStyle(this[0]);
+            return (outer ? parseInt(style.marginTop) + parseInt(style.marginBottom) : 0) + this[0].offsetHeight;
+        },
+
         show: function () {
             this.css('display', 'block');
         },
@@ -345,7 +357,7 @@
             return this.each(function (el) {
                 var $el = $(el);
                 $el.css("display") == "none" ? el.show() : el.hide();
-            })
+            });
         },
 
         index: function (element) {

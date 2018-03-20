@@ -6,12 +6,11 @@
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 
     <script src="../jqlite.js"></script>
-    <!--<script src="./js/jquery-3.2.1.min.js"></script>-->
 </head>
 
 <body>
 <div id="div1">
-    <div class="div2" gaga="gaew">
+    <div class="div2" gaga="gaew" style="width: 200px;margin: 40px;">
         <div class="div3"></div>
         <p class="div4">41</p>
         <div class="div5">51</div>
@@ -31,9 +30,11 @@
 <div class="div4">44</div>
 
 <script>
-    console.log($('.div4').each(function(el, i){
+    console.log($('.div4').each(function (el, i) {
         console.log(el, i, this);
     }));
+
+    console.log($('.div2').width(true), $('.div2').height(true));
 
     $('.div5').on('lalal', function (evt) {
         console.log(this, evt);
