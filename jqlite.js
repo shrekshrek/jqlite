@@ -392,8 +392,8 @@
 
         append: function (context) {
             var elems = $(context);
-            return this.each(function (el) {
-                elems = elems.clone();
+            return this.each(function (el, i) {
+                if (i > 0) elems = elems.clone();
                 elems.each(function (el2) {
                     el.appendChild(el2);
                 });
@@ -407,8 +407,8 @@
 
         prepend: function (context) {
             var elems = $(context);
-            return this.each(function (el) {
-                elems = elems.clone();
+            return this.each(function (el, i) {
+                if (i > 0) elems = elems.clone();
                 elems.each(function (el2) {
                     el.insertBefore(el2, el.firstChild);
                 });
@@ -422,8 +422,8 @@
 
         before: function (context) {
             var elems = $(context);
-            return this.each(function (el) {
-                elems = elems.clone();
+            return this.each(function (el, i) {
+                if (i > 0) elems = elems.clone();
                 elems.each(function (el2) {
                     el.parentNode.insertBefore(el2, el.parentNode.firstChild);
                 });
@@ -437,8 +437,8 @@
 
         after: function (context) {
             var elems = $(context);
-            return this.each(function (el) {
-                elems = elems.clone();
+            return this.each(function (el, i) {
+                if (i > 0) elems = elems.clone();
                 elems.each(function (el2) {
                     el.parentNode.insertBefore(el2, el.nextSibling);
                 });
