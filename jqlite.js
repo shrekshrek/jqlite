@@ -11,6 +11,7 @@
 
     var tempArray = [], slice = tempArray.slice, indexOf = tempArray.indexOf;
     var tempDiv = document.createElement('div');
+    var head = document.querySelector('head');
 
     function isObject(value) {
         return typeof value === "object";
@@ -118,29 +119,81 @@
             for (var i = 0; i < elems.length; i++) {
                 callback.call(context || elems, elems[i], i);
             }
-        },
+        }
 
+    });
+
+
+// ajax:
+    function formatParams(data) {
+        var arr = [];
+        for (var name in data) {
+            arr.push(encodeURIComponent(name) + '=' + encodeURIComponent(data[name]));
+        }
+        arr.push('_=' + Date.now());
+        return arr.join('&');
+    }
+
+    Object.assign($, {
         getJSON: function (url, success) {
             $.ajax({type: 'GET', url: url, success: success});
         },
 
-        ajax: function (obj) {
+        ajaxJSONP: function (options) {
+            options.jsonp = options.jsonp || 'callback';
+            options.jsonpCallback = options.jsonpCallback || 'jsonpCallback_' + Date.now();
+            options.type = 'GET';
+
+            options.data[options.jsonp] = options.jsonpCallback;
+            var data = formatParams(options.data);
+            var script = document.createElement('script');
+            var responseData;
+            head.appendChild(script);
+
+            window[options.jsonpCallback] = function (data) {
+                head.removeChild(script);
+                window[options.jsonpCallback] = null;
+                responseData = data;
+            };
+
+            script.onload = function () {
+                if (responseData == undefined) throw 'ajax response data is wrong!';
+                if (options.success) options.success(responseData);
+            };
+
+            script.onerror = function () {
+                if (options.error) options.error();
+            };
+
+            script.src = (options.url + '&' + data).replace(/[&?]{1,2}/, '?');
+
+        },
+
+        ajax: function (options) {
+            if (options === undefined) return;
+
+            options.data = options.data || {};
+
+            if (options.dataType == 'jsonp') return $.ajaxJSONP(options);
+
+            options.type = options.type ? options.type.toUpperCase() : 'GET';
+
             var request = new XMLHttpRequest();
-            request.open(obj.type, obj.url, true);
-            request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+            request.open(options.type, options.url, true);
+            if (options.type == 'POST') request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 
             request.onload = function () {
                 if (this.status >= 200 && this.status < 400) {
                     var data = JSON.parse(this.response);
-                    if (obj.success) obj.success(data);
+                    if (options.success) options.success(data);
                 }
             };
 
             request.onerror = function () {
-                if (obj.error) obj.error();
+                if (options.error) options.error();
             };
 
-            request.send(obj.data);
+            request.send(options.data);
         }
 
     });
