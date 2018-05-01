@@ -2,12 +2,19 @@
  * GIT: https://github.com/shrekshrek/jqlite
  **/
 
-(function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-        typeof define === 'function' && define.amd ? define(factory) :
-            (global.$ = factory());
-}(this, (function () {
-    'use strict';
+(function (factory) {
+
+    if (typeof define === 'function' && define.amd) {
+        define(['exports'], function (exports) {
+            window.$ = factory(exports);
+        });
+    } else if (typeof exports !== 'undefined') {
+        factory(exports);
+    } else {
+        window.$ = factory({});
+    }
+
+}(function ($) {
 
     var tempArray = [], slice = tempArray.slice, indexOf = tempArray.indexOf;
     var tempDiv = document.createElement('div');
@@ -535,4 +542,4 @@
 
     return $;
 
-})));
+}));
