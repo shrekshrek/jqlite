@@ -200,7 +200,7 @@
                 if (options.error) options.error();
             };
 
-            request.send(options.data);
+            request.send(formatParams(options.data));
         }
 
     });
