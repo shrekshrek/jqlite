@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 
     <script src="../jqlite.js"></script>
+    <!--<script src="js/zepto.js"></script>-->
+    <!--<script src="js/jquery-3.3.1.js"></script>-->
 </head>
 
 <body>
@@ -30,18 +32,20 @@
 <div class="div4">44</div>
 
 <script>
-    console.log($('.div4').each(function (el, i) {
-        console.log(el, i, this);
-    }));
+    // console.log($('.div4').each(function (el, i) {
+    //     console.log(el, i, this);
+    // }));
+    //
+    // console.log($('.div2').width(true), $('.div2').height(true));
+    //
+    // $('.div5').on('lalal', function (evt) {
+    //     console.log(this, evt);
+    // });
+    //
+    // $('.div5').trigger('lalal', {n: 1, m: 2});
+    // $('.div5').trigger('lalal', {n: 3, m: 4});
 
-    console.log($('.div2').width(true), $('.div2').height(true));
-
-    $('.div5').on('lalal', function (evt) {
-        console.log(this, evt);
-    });
-
-    $('.div5').trigger('lalal', {n: 1, m: 2});
-    $('.div5').trigger('lalal', {n: 3, m: 4});
+    $('.div2').css({width: 500, opacity: 0.5});
 
 </script>
 
