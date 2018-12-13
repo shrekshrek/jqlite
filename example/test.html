@@ -45,7 +45,17 @@
     // $('.div5').trigger('lalal', {n: 1, m: 2});
     // $('.div5').trigger('lalal', {n: 3, m: 4});
 
-    $('.div2').css({width: 500, opacity: 0.5});
+    var hscale = 0.4;
+    $('.div2').css({width: 500, opacity: 0.5, top: (975 + 50 * hscale)});
+
+    $('#div1').on('touchend', function () {
+        console.log('#div1 click');
+    });
+
+    $('#div1 .div2').on('touchend', function () {
+        console.log('.div2 click');
+        return false;
+    });
 
 </script>
 

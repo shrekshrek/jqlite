@@ -196,9 +196,32 @@
         return arr.join('&');
     }
 
+    function parseArguments(url, data, success, dataType) {
+        if ($.isFunction(data)) dataType = success, success = data, data = undefined;
+        if (!$.isFunction(success)) dataType = success, success = undefined;
+        return {
+            url: url
+            , data: data
+            , success: success
+            , dataType: dataType
+        }
+    }
+
     Object.assign($, {
-        getJSON: function (url, success) {
-            $.ajax({type: 'GET', url: url, success: success});
+        get: function (/* url, data, success, dataType */) {
+            return $.ajax(parseArguments.apply(null, arguments));
+        },
+
+        post: function (/* url, data, success, dataType */) {
+            var options = parseArguments.apply(null, arguments);
+            options.type = 'POST';
+            return $.ajax(options);
+        },
+
+        getJSON: function (/* url, data, success */) {
+            var options = parseArguments.apply(null, arguments);
+            options.dataType = 'json';
+            return $.ajax(options);
         },
 
         ajaxJSONP: function (options) {
@@ -246,8 +269,26 @@
 
             request.onload = function () {
                 if (this.status >= 200 && this.status < 400) {
-                    var data = JSON.parse(this.response);
-                    if (options.success) options.success(data);
+                    var result;
+                    if (this.responseType == 'arraybuffer' || this.responseType == 'blob')
+                        result = this.response;
+                    else {
+                        result = this.responseText;
+
+                        switch (options.dataType) {
+                            case 'json':
+                                result = JSON.parse(result);
+                                break;
+                            case 'xml':
+                                result = this.responseXML;
+                                break;
+                            case 'script':
+                                (1, eval)(result);
+                                break;
+                        }
+                    }
+
+                    if (options.success) options.success(result);
                 }
             };
 
