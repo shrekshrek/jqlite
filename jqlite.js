@@ -393,8 +393,8 @@
         text: function (text) {
             return 0 in arguments ?
                 this.each(function (i, el) {
-                    el.textContent = text;
-                }) : (0 in this ? this.textContent : null);
+                    el.innerText = text;
+                }) : (0 in this ? this.innerText : null);
         },
 
         val: function (value) {
