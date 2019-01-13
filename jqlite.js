@@ -501,7 +501,7 @@
                 var style = window.getComputedStyle(this[0]);
                 return (outer ? parseInt(style.marginTop) + parseInt(style.marginBottom) : 0) + this[0].offsetHeight;
             } else {
-                return this[0].offsetWidth;
+                return this[0].offsetHeight;
             }
         },
 
