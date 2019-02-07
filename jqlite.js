@@ -7,12 +7,12 @@
         typeof define === 'function' && define.amd ? define(factory) :
             (global.$ = factory());
 }(this, (function () {
-    'use strict'
+    'use strict';
 
-    var tempArray = [], slice = tempArray.slice, indexOf = tempArray.indexOf
-    var tempDiv = document.createElement('div')
-    var head = document.querySelector('head')
-    var _jqlid = 1, handlers = {}
+    var tempArray = [], slice = tempArray.slice, indexOf = tempArray.indexOf;
+    var tempDiv = document.createElement('div');
+    var head = document.querySelector('head');
+    var _jqlid = 1, handlers = {};
 
     var cssNumber = {
         'column-count': 1,
@@ -22,7 +22,7 @@
         'opacity': 1,
         'z-index': 1,
         'zoom': 1
-    }
+    };
 
     function hyphenize(str) {
         return str.replace(/([A-Z])/g, "-$1").toLowerCase()
@@ -37,18 +37,18 @@
     }
 
     function setHandler(element, event, fn, selector) {
-        var _id = getId(element)
-        var _handlers = handlers[_id] || (handlers[_id] = [])
-        var _handler = parse(event)
-        _handler.sel = selector
-        _handler.fn = fn
-        _handler.id = _handlers.length
-        _handlers.push(_handler)
+        var _id = getId(element);
+        var _handlers = handlers[_id] || (handlers[_id] = []);
+        var _handler = parse(event);
+        _handler.sel = selector;
+        _handler.fn = fn;
+        _handler.id = _handlers.length;
+        _handlers.push(_handler);
         return _handler
     }
 
     function getHandler(element, event, fn, selector) {
-        event = parse(event)
+        event = parse(event);
         return (handlers[getId(element)] || []).filter(function (handler) {
             return handler
                 && (!event.e || handler.e === event.e)
@@ -59,7 +59,7 @@
     }
 
     function parse(evt) {
-        var parts = ('' + evt).split('.')
+        var parts = ('' + evt).split('.');
         return {e: parts[0], ns: parts.slice(1).sort().join(' ')}
     }
 
@@ -112,22 +112,22 @@
     }
 
     function ready(callback) {
-        if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") callback()
+        if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") callback();
         else document.addEventListener('DOMContentLoaded', callback, false)
     }
 
 
 //-------------------------------------------------------------------------------------------------------------$:
     function $(selector, context) {
-        var elems
+        var elems;
         if (!selector) {
             return new $Obj()
         } else if ($.is$(selector)) {
             return selector
         } else if (isString(selector)) {
-            selector = selector.trim()
+            selector = selector.trim();
             if (selector[0] === '<') {
-                tempDiv.innerHTML = selector
+                tempDiv.innerHTML = selector;
                 elems = tempDiv.children
             } else {
                 elems = $.query(context || document, selector)
@@ -143,7 +143,7 @@
     }
 
     function $Obj(elems) {
-        var i, len = elems ? elems.length : 0
+        var i, len = elems ? elems.length : 0;
         for (i = 0; i < len; i++) this[i] = elems[i]
         this.length = len
     }
@@ -152,9 +152,9 @@
         for (var key in source) {
             if (deep && (isPlainObject(source[key]) || isArray(source[key]))) {
                 if (isPlainObject(source[key]) && !isPlainObject(target[key]))
-                    target[key] = {}
+                    target[key] = {};
                 if (isArray(source[key]) && !isArray(target[key]))
-                    target[key] = []
+                    target[key] = [];
                 extend(target[key], source[key], deep)
             } else if (source[key] !== undefined) target[key] = source[key]
         }
@@ -171,14 +171,14 @@
         },
 
         extend: function (target) {
-            var deep, args = slice.call(arguments, 1)
+            var deep, args = slice.call(arguments, 1);
             if (typeof target == 'boolean') {
-                deep = target
+                deep = target;
                 target = args.shift()
             }
             args.forEach(function (arg) {
                 extend(target, arg, deep)
-            })
+            });
             return target
         },
 
@@ -207,22 +207,22 @@
             }
         }
 
-    })
+    });
 
 
 //-------------------------------------------------------------------------------------------------------------ajax:
     function formatParams(data) {
-        var arr = []
+        var arr = [];
         for (var name in data) {
             arr.push(encodeURIComponent(name) + '=' + encodeURIComponent(data[name]))
         }
-        arr.push('_=' + Date.now())
+        arr.push('_=' + Date.now());
         return arr.join('&')
     }
 
     function parseArguments(url, data, success, dataType) {
-        if ($.isFunction(data)) dataType = success, success = data, data = undefined
-        if (!$.isFunction(success)) dataType = success, success = undefined
+        if ($.isFunction(data)) dataType = success, success = data, data = undefined;
+        if (!$.isFunction(success)) dataType = success, success = undefined;
         return {
             url: url,
             data: data,
@@ -237,93 +237,90 @@
         },
 
         post: function (/* url, data, success, dataType */) {
-            var options = parseArguments.apply(null, arguments)
-            options.type = 'POST'
+            var options = parseArguments.apply(null, arguments);
+            options.type = 'POST';
             return $.ajax(options)
         },
 
         getJSON: function (/* url, data, success */) {
-            var options = parseArguments.apply(null, arguments)
-            options.dataType = 'json'
+            var options = parseArguments.apply(null, arguments);
+            options.dataType = 'json';
             return $.ajax(options)
         },
 
         ajaxJSONP: function (options) {
-            options.jsonp = options.jsonp || 'callback'
-            options.jsonpCallback = options.jsonpCallback || 'jsonpCallback_' + Date.now()
-            options.type = 'GET'
+            options.jsonp = options.jsonp || 'callback';
+            options.jsonpCallback = options.jsonpCallback || 'jsonpCallback_' + Date.now();
+            options.type = 'GET';
 
-            options.data[options.jsonp] = options.jsonpCallback
-            var data = formatParams(options.data)
-            var script = document.createElement('script')
-            var responseData
-            head.appendChild(script)
+            options.data[options.jsonp] = options.jsonpCallback;
+            var data = formatParams(options.data);
+            var script = document.createElement('script');
+            var responseData;
+            head.appendChild(script);
 
             window[options.jsonpCallback] = function (data) {
-                head.removeChild(script)
-                window[options.jsonpCallback] = null
+                head.removeChild(script);
+                window[options.jsonpCallback] = null;
                 responseData = data
-            }
+            };
 
             script.onload = function () {
-                if (responseData == undefined) throw 'ajax response data is wrong!'
+                if (responseData == undefined) throw 'ajax response data is wrong!';
                 if (options.success) options.success(responseData)
-            }
+            };
 
             script.onerror = function () {
                 if (options.error) options.error()
-            }
+            };
 
             script.src = (options.url + '&' + data).replace(/[&?]{1,2}/, '?')
-
         },
 
         ajax: function (options) {
-            if (options === undefined) return
+            if (options === undefined) return;
 
-            options.data = options.data || {}
+            options.data = options.data || {};
 
-            if (options.dataType == 'jsonp') return $.ajaxJSONP(options)
+            if (options.dataType == 'jsonp') return $.ajaxJSONP(options);
 
-            options.type = options.type ? options.type.toUpperCase() : 'GET'
+            options.type = options.type ? options.type.toUpperCase() : 'GET';
 
-            var request = new XMLHttpRequest()
-            request.open(options.type, options.url, true)
-            if (options.type == 'POST') request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded charset=UTF-8')
+            var request = new XMLHttpRequest();
+            request.open(options.type, options.url, true);
+            if (options.type == 'POST') request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded charset=UTF-8');
 
             request.onload = function () {
                 if (this.status >= 200 && this.status < 400) {
-                    var result
+                    var result;
                     if (this.responseType == 'arraybuffer' || this.responseType == 'blob')
-                        result = this.response
+                        result = this.response;
                     else {
-                        result = this.responseText
+                        result = this.responseText;
 
                         switch (options.dataType) {
                             case 'json':
-                                result = JSON.parse(result)
+                                result = JSON.parse(result);
                                 break
                             case 'xml':
-                                result = this.responseXML
+                                result = this.responseXML;
                                 break
                             case 'script':
-                                (1, eval)(result)
+                                (1, eval)(result);
                                 break
                         }
                     }
-
                     if (options.success) options.success(result)
                 }
-            }
+            };
 
             request.onerror = function () {
                 if (options.error) options.error()
-            }
+            };
 
             request.send(formatParams(options.data))
         }
-
-    })
+    });
 
 
 //-------------------------------------------------------------------------------------------------------------private methods:
@@ -350,16 +347,16 @@
             if (!selector) {
                 return this
             } else {
-                var elems = new $Obj()
+                var elems = new $Obj();
                 this.each(function (i, el) {
                     elems.add($(selector, el))
-                })
+                });
                 return elems
             }
         },
 
         add: function (selector, context) {
-            var elems = $(selector, context)
+            var elems = $(selector, context);
             for (var i = 0; i < elems.length; i++) {
                 this[this.length++] = elems[i]
             }
@@ -367,7 +364,7 @@
         },
 
         each: function (callback) {
-            $.each(this, callback)
+            $.each(this, callback);
             return this
         },
 
@@ -378,26 +375,26 @@
         },
 
         parent: function () {
-            var elems = new $Obj()
+            var elems = new $Obj();
             this.each(function (i, el) {
                 elems.add(el.parentNode)
-            })
+            });
             return elems
         },
 
         children: function () {
-            var elems = new $Obj()
+            var elems = new $Obj();
             this.each(function (i, el) {
                 elems.add(el.children)
-            })
+            });
             return elems
         },
 
         clone: function () {
-            var elems = new $Obj()
+            var elems = new $Obj();
             this.each(function (i, el) {
                 elems.add(el.cloneNode(true))
-            })
+            });
             return elems
         },
 
@@ -491,7 +488,7 @@
 
         css: function (key, value) {
             if (value !== undefined) {
-                value = isFunction(value) ? value() : checkValue(key, value)
+                value = isFunction(value) ? value() : checkValue(key, value);
                 this.each(function (i, el) {
                     el.style[key] = value
                 })
@@ -506,11 +503,11 @@
         },
 
         width: function (outer) {
-            if (!this.length) return null
+            if (!this.length) return null;
             if (isWindow(this[0])) {
                 return this[0].innerWidth
             } else if (outer) {
-                var style = window.getComputedStyle(this[0])
+                var style = window.getComputedStyle(this[0]);
                 return parseInt(style.marginLeft) + parseInt(style.marginRight) + this[0].offsetWidth
             } else {
                 return this[0].offsetWidth
@@ -518,11 +515,11 @@
         },
 
         height: function (outer) {
-            if (!this.length) return null
+            if (!this.length) return null;
             if (isWindow(this[0])) {
                 return this[0].innerHeight
             } else if (outer) {
-                var style = window.getComputedStyle(this[0])
+                var style = window.getComputedStyle(this[0]);
                 return (outer ? parseInt(style.marginTop) + parseInt(style.marginBottom) : 0) + this[0].offsetHeight
             } else {
                 return this[0].offsetHeight
@@ -539,7 +536,7 @@
 
         toggle: function () {
             return this.each(function (i, el) {
-                var $el = $(el)
+                var $el = $(el);
                 $el.css("display") == "none" ? el.show() : el.hide()
             })
         },
@@ -549,10 +546,10 @@
         },
 
         hasClass: function (className) {
-            var has = false
+            var has = false;
             this.each(function (i, el) {
                 if (el.classList.contains(className)) has = true
-            })
+            });
             return has
         },
 
@@ -575,9 +572,9 @@
         },
 
         append: function (context) {
-            var elems = $(context)
+            var elems = $(context);
             return this.each(function (i, el) {
-                if (i > 0) elems = elems.clone()
+                if (i > 0) elems = elems.clone();
                 elems.each(function (j, el2) {
                     el.appendChild(el2)
                 })
@@ -585,14 +582,14 @@
         },
 
         appendTo: function (context) {
-            $(context).append(this)
+            $(context).append(this);
             return this
         },
 
         prepend: function (context) {
-            var elems = $(context)
+            var elems = $(context);
             return this.each(function (i, el) {
-                if (i > 0) elems = elems.clone()
+                if (i > 0) elems = elems.clone();
                 elems.each(function (j, el2) {
                     el.insertBefore(el2, el.firstChild)
                 })
@@ -600,14 +597,14 @@
         },
 
         prependTo: function (context) {
-            $(context).prepend(this)
+            $(context).prepend(this);
             return this
         },
 
         before: function (context) {
-            var elems = $(context)
+            var elems = $(context);
             return this.each(function (i, el) {
-                if (i > 0) elems = elems.clone()
+                if (i > 0) elems = elems.clone();
                 elems.each(function (j, el2) {
                     el.parentNode.insertBefore(el2, el.parentNode.firstChild)
                 })
@@ -615,14 +612,14 @@
         },
 
         insertBefore: function (context) {
-            $(context).before(this)
+            $(context).before(this);
             return this
         },
 
         after: function (context) {
-            var elems = $(context)
+            var elems = $(context);
             return this.each(function (i, el) {
-                if (i > 0) elems = elems.clone()
+                if (i > 0) elems = elems.clone();
                 elems.each(function (j, el2) {
                     el.parentNode.insertBefore(el2, el.nextSibling)
                 })
@@ -630,7 +627,7 @@
         },
 
         insertAfter: function (context) {
-            $(context).after(this)
+            $(context).after(this);
             return this
         },
 
@@ -639,43 +636,43 @@
         },
 
         on: function (event, selector, listener) {
-            var _proxy, _sel, _fn, _self = this
+            var _proxy, _sel, _fn, _self = this;
             if (listener === undefined) {
-                _sel = ''
-                _fn = selector
+                _sel = '';
+                _fn = selector;
                 _proxy = function (evt) {
-                    var result = _fn.call(evt.target, evt)
+                    var result = _fn.call(evt.target, evt);
                     if (result === false) evt.preventDefault(), evt.stopPropagation()
                 }
             } else {
-                _sel = selector
-                _fn = listener
+                _sel = selector;
+                _fn = listener;
                 _proxy = function (evt) {
                     if (indexOf.call(_self.find(_sel), evt.target) !== -1) {
-                        var result = _fn.call(evt.target, evt)
+                        var result = _fn.call(evt.target, evt);
                         if (result === false) evt.preventDefault(), evt.stopPropagation()
                     }
                 }
             }
             return this.each(function (i, el) {
-                var _handler = setHandler(el, event, _fn, _sel)
-                _handler.proxy = _proxy
+                var _handler = setHandler(el, event, _fn, _sel);
+                _handler.proxy = _proxy;
                 el.addEventListener(_handler.e, _handler.proxy)
             })
         },
 
         off: function (event, selector, listener) {
-            var _sel = '', _fn
+            var _sel = '', _fn;
             if (listener === undefined) {
                 _fn = selector
             } else {
-                _sel = selector
+                _sel = selector;
                 _fn = listener
             }
             return this.each(function (i, el) {
-                var _id = getId(el)
+                var _id = getId(el);
                 getHandler(el, event, _fn, _sel).forEach(function (_handler) {
-                    delete handlers[_id][_handler.id]
+                    delete handlers[_id][_handler.id];
                     el.removeEventListener(_handler.e, _handler.proxy)
                 })
             })
@@ -683,18 +680,17 @@
 
         trigger: function (eventName, data) {
             return this.each(function (i, el) {
-                var event = document.createEvent('HTMLEvents')
-                event.data = data
-                event.initEvent(eventName, true, true)
+                var event = document.createEvent('HTMLEvents');
+                event.data = data;
+                event.initEvent(eventName, true, true);
                 el.dispatchEvent(event)
             })
         }
 
+    });
 
-    })
-
-    $Obj.prototype.$ = $Obj.prototype.find
+    $Obj.prototype.$ = $Obj.prototype.find;
 
     return $
 
-})))
+})));
