@@ -10,7 +10,22 @@
     'use strict';
 
     var tempArray = [], slice = tempArray.slice, indexOf = tempArray.indexOf;
-    var tempDiv = document.createElement('div');
+
+    var fragmentRE = /^\s*<(\w+|!)[^>]*>/;
+
+    var tempTable = document.createElement('table');
+    var tempTableRow = document.createElement('tr');
+    var containers = {
+        'tr': document.createElement('tbody'),
+        'tbody': tempTable,
+        'thead': tempTable,
+        'tfoot': tempTable,
+        'td': tempTableRow,
+        'th': tempTableRow,
+        '*': document.createElement('div')
+    };
+    var container, name;
+
     var head = document.querySelector('head');
     var _jqlid = 1, handlers = {};
 
@@ -127,8 +142,12 @@
         } else if (isString(selector)) {
             selector = selector.trim();
             if (selector[0] === '<') {
-                tempDiv.innerHTML = selector;
-                elems = tempDiv.children
+                name = fragmentRE.test(selector) && RegExp.$1
+                if (!(name in containers)) name = '*'
+
+                container = containers[name];
+                container.innerHTML = '' + selector;
+                elems = container.children;
             } else {
                 elems = $.query(context || document, selector)
             }
