@@ -307,7 +307,7 @@
 
             var request = new XMLHttpRequest();
             request.open(options.type, options.url, true);
-            if (options.type == 'POST') request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded charset=UTF-8');
+            if (options.type == 'POST') request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 
             request.onload = function () {
                 if (this.status >= 200 && this.status < 400) {
@@ -338,6 +338,8 @@
             };
 
             request.send(formatParams(options.data))
+
+            return request
         }
     });
 
