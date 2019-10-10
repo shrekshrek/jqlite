@@ -231,12 +231,15 @@
 
 //-------------------------------------------------------------------------------------------------------------ajax:
     function formatParams(data) {
-        var arr = [];
-        for (var name in data) {
-            arr.push(encodeURIComponent(name) + '=' + encodeURIComponent(data[name]))
+        if (isObject(data)) {
+            var arr = [];
+            for (var name in data) {
+                arr.push(encodeURIComponent(name) + '=' + encodeURIComponent(data[name]))
+            }
+            return arr.join('&')
+        } else {
+            return data;
         }
-        arr.push('_=' + Date.now());
-        return arr.join('&')
     }
 
     function parseArguments(url, data, success, dataType) {
@@ -320,13 +323,13 @@
                         switch (options.dataType) {
                             case 'json':
                                 result = JSON.parse(result);
-                                break
+                                break;
                             case 'xml':
                                 result = this.responseXML;
-                                break
+                                break;
                             case 'script':
                                 (1, eval)(result);
-                                break
+                                break;
                         }
                     }
                     if (options.success) options.success(result)
