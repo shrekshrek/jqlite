@@ -9,35 +9,32 @@
 }(this, (function () {
   'use strict';
 
-  var lArray = Array, tempArray = [], slice = tempArray.slice, indexOf = tempArray.indexOf, doc = document,
-    hasOwnProperty = Object.prototype.hasOwnProperty, assign = Object.assign,
-    UNDEFINED = undefined, _false=false,_true=true,_null=null;
+  var lArray = Array,
+    tempArray = [],
+    slice = tempArray.slice,
+    indexOf = tempArray.indexOf,
+    doc = document,
+    hasOwnProperty = Object.prototype.hasOwnProperty,
+    assign = Object.assign,
+    UNDEFINED = undefined, _false = false,
+    _true = true,
+    _null = null,
+    fragmentRE = /^\s*<(\w+|!)[^>]*>/,
+    tempTable = 'table',
+    tempTableRow = 'tr',
+    containers = {
+      'tr': 'tbody',
+      'tbody': tempTable,
+      'thead': tempTable,
+      'tfoot': tempTable,
+      'td': tempTableRow,
+      'th': tempTableRow,
+      '*': 'div'
+    },
+    head = doc.querySelector('head'),
+    jqlEventListenersMapName = '__jql_EventListenersMap',
+    _event_handlerName = '_event_handler';
 
-  var fragmentRE = /^\s*<(\w+|!)[^>]*>/;
-
-  var tempTable = 'table';
-  var tempTableRow = 'tr';
-  var containers = {
-    'tr': 'tbody',
-    'tbody': tempTable,
-    'thead': tempTable,
-    'tfoot': tempTable,
-    'td': tempTableRow,
-    'th': tempTableRow,
-    '*': 'div'
-  };
-  var container, name;
-
-  var head = doc.querySelector('head');
-  var _jqlId = 1, handlers = {};
-
-  function get_jqlId() {
-    if (_jqlId < Number.MAX_SAFE_INTEGER) {
-      return _jqlId++ || _jqlId++
-    } else {
-      return _jqlId = 1 - _jqlId;
-    }
-  }
 
   var cssNumber = {
     'column-count': 1,
@@ -49,9 +46,9 @@
     'zoom': 1
   };
 
-  function createElement(tagName) {
-    return doc.createElement(tagName)
-  }
+  /* function createElement(tagName) {
+     return doc.createElement(tagName)
+   }*/
 
   function hyphenize(str) {
     return str.replace(/([A-Z])/g, "-$1").toLowerCase()
@@ -61,51 +58,43 @@
     return (isNumber(value) && !cssNumber[hyphenize(name)]) ? value + "px" : value
   }
 
-  function getId(element) {
-    return element._jqlId || (element._jqlId = get_jqlId())
+
+  function isSameHandler(handler, event, isOff) {
+    var e = event.e, fn = event.fn, ns = event.ns, sel = event.sel;
+    return handler
+      && (!e || handler.e === e)
+      && (!ns || (isOff ? handler.ns === ns : handler.ns.indexOf(ns) === 0))
+      && (!fn || handler.fn === fn)
+      && (!sel || handler.sel === sel)
   }
 
-  function setHandler(element, event, fn, selector) {
-    var _id = getId(element);
-    var _handlers = handlers[_id] || (handlers[_id] = []);
-    var _handler = parse(event);
-    _handler.sel = selector;
-    _handler.fn = fn;
-    _handler.id = _handlers.length;
-    _handlers.push(_handler);
-    return _handler
-  }
-
-  function getHandler(element, event, fn, selector) {
-    event = parse(event);
-    return (handlers[getId(element)] || []).filter(function (handler) {
-      return handler
-        && (!event.e || handler.e === event.e)
-        && (!event.ns || handler.ns.indexOf(event.ns) === 0)
-        && (!fn || getId(handler.fn) === getId(fn))
-        && (!selector || handler.sel === selector)
-    })
-  }
 
   function parse(evt) {
     var e, ns;
-    if (evt && isString(evt)) {
-      var index = evt.indexOf('.');
-      if (index !== -1) {
-        e = evt.slice(0, index).trim();
-        ns = evt.slice(index).trim() + '.';
-      } else {
-        e = evt.trim();
-        ns = ''
+    if (evt) {
+      if (isString(evt)) {
+        var index = evt.indexOf('.');
+        if (index !== -1) {
+          e = evt.slice(0, index).trim();
+          ns = evt.slice(index).trim() + '.';
+        } else {
+          e = evt.trim();
+          ns = ''
+        }
+      } else if (isObject(evt)) {
+        return assign({}, evt)
       }
-      var parts = ('' + evt).split('.');
     }
 
     return {e: e, ns: ns}
   }
 
   function isWindow(obj) {
-    return obj != _null && obj === obj.window
+    return obj instanceof Window
+  }
+
+  function isCurrentWindow(obj) {
+    return obj === window
   }
 
   function isObjectT(obj) {
@@ -113,7 +102,7 @@
   }
 
   function isObject(obj) {
-    return obj != _null && isObjectT(obj)
+    return !!obj && isObjectT(obj)
   }
 
   function isPlainObject(obj) {
@@ -128,8 +117,12 @@
     return typeof obj === "string"
   }
 
-  function isNumber(obj) {
+  function isNumberT(obj) {
     return typeof obj === "number"
+  }
+
+  function isNumber(obj) {
+    return isNumberT(obj) && isFinite(obj)
   }
 
   function isBoolean(obj) {
@@ -149,11 +142,30 @@
   }
 
   function isElement(obj) {
-    return obj && obj.nodeType === 1
+    return obj instanceof Element
+  }
+
+  function isDocument(obj) {
+    return obj instanceof Document
+  }
+
+  function isNode(obj) {
+    return obj instanceof Node
+  }
+
+  function isEleWinDoc(obj) {
+    return isElement(obj) || isWindow(obj) || isDocument(obj)
   }
 
   function likeArray(obj) {
-    return isArray(obj) || (obj.length !== UNDEFINED && isNumber(obj.length))
+    if (isArray(obj) || isString(obj)) {
+      return _true
+    }
+    if (!isObject(obj)) {
+      return _false
+    }
+    var length = obj.length;
+    return length === 0 || isNumber(length) && length > 0 && (length - 1) in obj
   }
 
   function isNodeList(elem) {
@@ -164,6 +176,20 @@
     return elem instanceof HTMLCollection
   }
 
+  function isEmptyObject(obj, checkHasOwn) {
+    if (isObject(obj)) {
+      for (var name in obj) {
+        if (!checkHasOwn || (hasOwnProperty.call(obj, name))) {
+          return _false;
+        }
+      }
+    }
+    return _true;
+  }
+
+  function isEmpty(obj) {
+    return !obj || isObject(obj) && isEmptyObject(obj, _true);
+  }
 
 //-------------------------------------------------------------------------------------------------------------$:
 
@@ -181,7 +207,7 @@
     } else if (isString(selector)) {
       selector = selector.trim();
       if (selector[0] === '<') {
-        name = fragmentRE.test(selector) && RegExp.$1;
+        var name = fragmentRE.test(selector) && RegExp.$1;
         if (!(name in containers)) {
           name = '*';
         }
@@ -249,18 +275,30 @@
     return parent !== node && parent.contains(node)
   }
 
-  function each(elems, callback, context) {
-    if (likeArray(elems)) {
-      for (var i = 0, l = elems.length; i < l; i++)
-        if (callback.call(context || elems[i], i, elems[i]) === _false) return elems
-    } else {
-      for (var key in elems) {
-        if (hasOwnProperty.call(elems, key) && callback.call(context || elems[key], key, elems[key]) === _false) {
-          return elems
+  function each(obj, callback, context) {
+    return likeArray(obj) ? eachI(obj, callback, context) : eachIn(obj, callback, context)
+  }
+
+  function eachI(arr, callback, context) {
+    if (arr) {
+      for (var i = 0, l = arr.length; i < l; i++) {
+        if (callback.call(context || arr[i], i, arr[i]) === _false) {
+          break
         }
       }
-
     }
+    return arr
+  }
+
+  function eachIn(obj, callback, context) {
+    if (isObject(obj)) {
+      for (var key in obj) {
+        if (hasOwnProperty.call(obj, key) && callback.call(context || obj[key], key, obj[key]) === _false) {
+          return obj
+        }
+      }
+    }
+    return obj;
   }
 
   function parseXML(data, type) {
@@ -355,6 +393,8 @@
     isObjectT: isObjectT,
     isObject: isObject,
     isPlainObject: isPlainObject,
+    isEmptyObject: isEmptyObject,
+    isEmpty: isEmpty,
     isFunction: isFunction,
     isString: isString,
     isNumber: isNumber,
@@ -362,7 +402,11 @@
     isArray: isArray,
     isDate: isDate,
     isRegExp: isRegExp,
+    isWindow: isWindow,
+    isCurrentWindow: isCurrentWindow,
     isElement: isElement,
+    isNode: isNode,
+    isEleWinDoc: isEleWinDoc,
     isNodeList: isNodeList,
     isHTMLCollection: isHTMLCollection,
     parseHTML: parseHTML,
@@ -373,8 +417,9 @@
     newXMLDocument: newXMLDocument,
     createDocFragment: createDocFragment,
     contains: contains,
-    each: each
-
+    each: each,
+    eachI: eachI,
+    eachIn: eachIn
   });
 
 //-------------------------------------------------------------------------------------------------------------ajax:
@@ -712,8 +757,35 @@
       if (evt.cancelable) {
         evt.preventDefault();
       }
+      evt.returnValue = _false;
       evt.stopPropagation();
+      evt.stopImmediatePropagation();
     }
+    return result
+  }
+
+  function matchesTargetSelector(current, target, selector) {
+    var isMatches = !selector;
+    while (!isMatches && isElement(target) && target !== current) {
+      if (target.matches(selector)) {
+        isMatches = _true;
+      }
+      target = target.parentNode;
+    }
+    return isMatches;
+  }
+
+  function matchesSelector(element, selector) {
+    if (!selector) {
+      return _true
+    }
+    if (isFunction(selector)) {
+      return selector(element)
+    }
+    if (isElement(element) && (isString(selector) ? selector.trim() : selector)) {
+      return element.matches(selector)
+    }
+    return _false
   }
 
   assign($Obj.prototype, $.fn = {
@@ -724,7 +796,7 @@
     },
 
     eq: function (idx) {
-      return $(idx === -1 ? slice.call(this, idx) : slice.call(this, idx, idx + 1))
+      return $(idx === -1 ? slice.call(this, idx) : this[idx])
     },
 
     first: function () {
@@ -734,7 +806,15 @@
     last: function () {
       return this.length ? this.eq(this.length - 1) : _null
     },
-
+    filter: function (selector) {
+      var $o = new $Obj();
+      for (var i = 0, l = this.length, el; i < l; i++) {
+        if ((el = this[i]) && matchesSelector(el, selector)) {
+          $o[$o.length++] = el;
+        }
+      }
+      return $o
+    },
     find: function (selector) {
       if (!selector) {
         return this
@@ -748,11 +828,13 @@
     },
 
     add: function (selector, context) {
-      var elems = $(selector, context);
-      for (var i = 0; i < elems.length; i++) {
-        this[this.length++] = elems[i]
+      var elems = $(selector, context), _this = this, el;
+      for (var i = 0, l = elems.length; i < l; i++) {
+        if (indexOf.call(_this, el = elems[i]) === -1) {
+          _this[_this.length++] = el
+        }
       }
-      return this
+      return _this
     },
 
     each: function (callback) {
@@ -789,11 +871,16 @@
       });
       return elems
     },
-
-    remove: function () {
-      return this.each(function (i, el) {
-        if (el.parentNode != _null) el.parentNode.removeChild(el)
+    detach: function (selector) {
+      return (selector ? this.filter(selector) : this).each(function (i, el) {
+        var par = el.parentNode;
+        if (par && par.removeChild) {
+          par.removeChild(el)
+        }
       })
+    },
+    remove: function (selector) {
+      return (selector ? this.filter(selector) : this).offAll().detach();
     },
 
     html: function (html) {
@@ -1028,72 +1115,174 @@
     replaceWith: function (context) {
       return this.before(context).remove()
     },
-
-    on: function (event, selector, listener,options) {
-      var _proxy, _sel, _fn;
-      if (listener === UNDEFINED) {
-        _sel = '';
-        _fn = selector;
-        _proxy = function (evt) {
-          var result = _fn.call(evt.currentTarget, evt);
-          handleEventReturn(result, evt)
-        }
-      } else {
-        _sel = selector;
-        _fn = listener;
-        _proxy = function (evt) {
-          var _this = evt.currentTarget, target = evt.target, isMatches;
-          while (target && target !== _this) {
-            if (target.matches(_sel)) {
-              isMatches = _true;
-              break;
-            }
-            target = target.parentNode;
+    on: function (event, selector, listener, options) {
+      var _this = this;
+      if (!_this.length) {
+        return _this
+      }
+      event = parse(event);
+      var _sel, _fn, _e = event.e;
+      if (_e) {
+        if (isFunction(selector)) {
+          _sel = '';
+          if (!isFunction(listener)) {
+            _fn = selector;
+            options = listener;
           }
-          if (isMatches) {
-            var result = _fn.call(_this, evt);
-            handleEventReturn(result, evt);
-          }
+        } else {
+          _sel = isString(selector) ? selector.trim() : '';
+          _fn = listener;
         }
       }
-      return this.each(function (i, el) {
-        var _handler = setHandler(el, event, _fn, _sel);
-        if (!_handler.e) {
-          return !!(_proxy = _null)
+      if (!isFunction(_fn)) {
+        return _this;
+      }
+      var eventOption = _false, once;
+      if (isObject(options)) {
+        once = !!options.once;
+        eventOption = {capture: _false, passive: options.passive}
+      } else {
+        once = options===_true;
+      }
+      event.fn = _fn;
+      event.sel = _sel;
+      event.once = once;
+      return _this.each(function (i, el) {
+        if (isEleWinDoc(el)) {
+          var handlersMap = el[jqlEventListenersMapName] || (el[jqlEventListenersMapName] = {}), isAdd;
+          var handlers = handlersMap[_e] || (isAdd = _true) && (handlersMap[_e] = []);
+          handlers.push(event);
+          if (isAdd) {
+            addEventListener(el, _e, eventProxy, eventOption)
+          }
         }
-        _handler.proxy = _proxy;
-        el.addEventListener(_handler.e, _handler.proxy,options)
       })
     },
 
     off: function (event, selector, listener) {
-      var _sel = '', _fn;
-      if (listener === UNDEFINED) {
-        _fn = selector
+      var _this = this;
+      if (!_this.length) {
+        return _this
+      }
+      var _sel, _fn;
+      if (isFunction(selector)) {
+        _fn = selector;
       } else {
         _sel = selector;
         _fn = listener
       }
+      var targetHandler = parse(event), type = targetHandler.e, ns = targetHandler.ns, nonSelector = !selector,
+        isFn = isFunction(_fn), isRemoveEvent = type && nonSelector && isFn;
+      if (!type && !ns && nonSelector && !isFn) {
+        return _this
+      }
+      if (type === '') {
+        return _this.offAll(ns, _sel, listener);
+      }
+      targetHandler.fn = _fn;
+      targetHandler.sel = _sel;
+      return _this.each(function (i, el) {
+        if (isEleWinDoc(el)) {
+          removeEventEach(el, type, targetHandler);
+          if (isRemoveEvent) {
+            removeEventListener(el, type, _fn);
+          }
+        }
+      });
+    },
+    offAll: function (namespace, selector, listener) {
+      if (isFunction(namespace)) {
+        listener = namespace;
+        namespace = '';
+      } else if (isFunction(selector)) {
+        listener = selector;
+        selector = '';
+      }
+      namespace = isString(namespace) ? namespace : '';
       return this.each(function (i, el) {
-        var _id = getId(el);
-        getHandler(el, event, _fn, _sel).forEach(function (_handler) {
-          delete handlers[_id][_handler.id];
-          el.removeEventListener(_handler.e, _handler.proxy)
-        })
+        if (isEleWinDoc(el)) {
+          var handlersMap = el[jqlEventListenersMapName];
+          if (isObject(handlersMap)) {
+            for (var type in handlersMap) {
+              if (handlersMap.hasOwnProperty(type)) {
+                $(el).off(type + namespace, selector, listener);
+              }
+            }
+          }
+        }
       })
     },
-
-    trigger: function (eventName, data) {
-      return this.each(function (i, el) {
-        var event = doc.createEvent('HTMLEvents');
-        event.data = data;
-        event.initEvent(eventName, _true, _true);
-        el.dispatchEvent(event)
+    trigger: function (event, data) {
+      var _this = this;
+      if (!_this.length) {
+        return _this
+      }
+      event = parse(event);
+      var type = event.e, ns = event.ns;
+      return _this.each(function (i, el) {
+        if (isEleWinDoc(el)) {
+          var event = doc.createEvent('HTMLEvents');
+          event.data = data;
+          event.namespace = ns;
+          event.initEvent(type, _true, _true);
+          el.dispatchEvent(event)
+        }
       })
     }
-
   });
 
+
+  function removeEventListener(el, type, listener) {
+    el.removeEventListener(type, listener)
+  }
+
+  function addEventListener(el, type, listener, options) {
+    el.addEventListener(type, listener, options)
+  }
+  function eventProxy(event) {
+    var currentTarget = event.currentTarget, target = event.target;
+    var handlersMap = currentTarget[jqlEventListenersMapName];
+    var type = event.type, ns = event.namespace || '';
+    var targetHandler = {e: type, ns: ns};
+    var handlers = handlersMap[type];
+    eachI(handlers.concat(), function (i, currentHandler) {
+      if (isSameHandler(currentHandler, targetHandler) && matchesTargetSelector(currentTarget, target, currentHandler.sel)) {
+        if (currentHandler.once) {
+          removeEventOne(handlers, handlersMap, currentHandler, targetHandler, currentTarget, type)
+        }
+        return handleEventReturn(currentHandler.fn.call(currentTarget, event), event);
+      }
+    });
+    deleteHandlersMap(currentTarget, handlersMap)
+  }
+  function removeEventOne(handlers, handlersMap, currentHandler, targetHandler, currentElement, type) {
+    handlers.splice(handlers.indexOf(currentHandler), 1);
+    if (!handlers.length) {
+      tryDelete(handlersMap, type);
+      removeEventListener(currentElement, type, eventProxy);
+    }
+  }
+
+  function deleteHandlersMap(element, handlersMap) {
+    if (isEmptyObject(handlersMap, _true)) {
+      tryDelete(element, jqlEventListenersMapName)
+    }
+  }
+
+  function removeEventEach(currentElement, type, targetHandler) {
+    var handlersMap = currentElement[jqlEventListenersMapName];
+    if (handlersMap) {
+      var handlers = handlersMap[type];
+      if (handlers) {
+        handlers.concat().forEach(function (currentHandler) {
+          if (isSameHandler(currentHandler, targetHandler, _true)) {
+            removeEventOne(handlers, handlersMap, currentHandler, targetHandler, currentElement, type)
+          }
+        })
+      }
+      deleteHandlersMap(handlersMap)
+    }
+  }
 
   return $
 
