@@ -1,5 +1,5 @@
 /*!
- * GIT: https://github.com/shrekshrek/jqlite
+ * forked from GIT: https://github.com/shrekshrek/jqlite
  **/
 
 (function (global, factory) {
@@ -32,8 +32,7 @@
       '*': 'div'
     },
     head = doc.querySelector('head'),
-    jqlEventListenersMapName = '__jql_EventListenersMap',
-    _event_handlerName = '_event_handler';
+    jqlEventListenersMapName = '__jql_EventListenersMap';
 
 
   var cssNumber = {
@@ -437,19 +436,25 @@
     }
   }
 
-  function parseArguments(url, data, success, dataType) {
+  function parseArguments(url, data, success, dataType, type) {
+    if (isObject(url)) {
+      return url;
+    }
     if (isFunction(data)) {
+      type = dataType;
       dataType = success;
       success = data;
       data = UNDEFINED;
     }
     if (!isFunction(success)) {
+      type = dataType;
       dataType = success;
       success = UNDEFINED;
     }
     return {
       url: url,
       data: data,
+      type: type,
       success: success,
       dataType: dataType
     }
@@ -504,7 +509,13 @@
     window[jsonpCallback] = function (data) {
       responseData = data;
     };
-    var ret, on = function (e) {
+    var ret, RET = ret = {
+      abort: function () {
+        if (on) {
+          on({type: 'abort', isLocaleAbort: _true})
+        }
+      }
+    }, on = function (e) {
       if (sid) {
         clearTimeout(sid);
       }
@@ -554,30 +565,93 @@
       onerror: on,
       onabort: on,
     },/*{nonce:''}*/);
-    return ret = {
-      abort: function () {
-        if (on) {
-          on({type: 'abort', isLocaleAbort: _true})
-        }
+    return RET
+  }
+
+  function arrCallbackBind(arrCallback, index) {
+    return function (img) {
+      var _arrCallback = arrCallback, _index = index;
+      arrCallback = index = UNDEFINED;
+      if (_arrCallback) {
+        _arrCallback(_index, img)
       }
     }
   }
 
+  function loadImage(url, callback) {
+    callback = isFunction(callback) ? callback : _false;
+    if (isArray(url)) {
+      var l = url.length, ret = [];
+      if (!l) {
+        if (callback) {
+          callback()
+        }
+        return ret;
+      }
+      var arr = [], notError = _true, arrCallback = callback && function (i, img) {
+        arr[i] = img;
+        notError = notError && img !== UNDEFINED;
+        if (--l <= 0) {
+          var _callback = callback;
+          arrCallback = callback = UNDEFINED;
+          arr[arr.length] = notError;
+          _callback.apply(_null, arr)
+        }
+      };
+      for (var i = 0; i < l; i++) {
+        ret[i] = loadImage(url[i], arrCallback && arrCallbackBind(arrCallback, i));
+      }
+      return ret;
+    }
+    var img = new Image();
+    if (callback) {
+      img.onload = img.onerror = img.onabort = function (e) {
+        var img = this, _callback = callback;
+        img.onload = img.onerror = img.onabort = callback = UNDEFINED;
+        if (e.type === 'load') {
+          _callback(img)
+        } else {
+          _callback()
+        }
+      };
+    }
+    img.src = url;
+    return img;
+  }
 
-  function ajax(options) {
-    if (!isObject(options) || !isString(options.url)) {
-      return
+  function ajax(options, aData, aSuccess, aDataType, aType) {
+    options = parseArguments(options, aData, aSuccess, aDataType, aType);
+    var error = options.onerror,
+      complete = options.complete;
+    error = isFunction(error) ? error : UNDEFINED;
+    complete = isFunction(complete) ? complete : UNDEFINED;
+    if (!isString(options.url)) {
+      if (error || complete) {
+        setTimeout(function () {
+          var _error, _complete = complete, result = UNDEFINED, type = 'error:InvalidURL';
+          error = complete = UNDEFINED;
+          if (_error) {
+            _error(result, type);
+          }
+          if (_complete) {
+            _complete(result, type)
+          }
+        })
+      }
+      return {abort: noop}
     }
-    if (options.dataType === 'jsonp') {
+    var dataType = options.dataType ? options.dataType.toLowerCase() : 'text';
+    if (dataType === 'jsonp') {
       return ajaxJSONP(options);
-    }
+    }/* else if (dataType === 'image') {
+      return loadImage(options);
+    }*/
     var search = formatParams(options.data || {}), body = options.body;
     if (!body) {
       body = search;
       search = '';
     }
     var request = new XMLHttpRequest(), type = options.type ? options.type.toUpperCase() : 'GET',
-      dataType = options.dataType ? options.dataType.toLowerCase() : 'text',
       isAsync = dataType !== 'script' && options.async !== _false, k;
     request.open(
       type,
@@ -601,9 +675,7 @@
     }
     var contentType = options.contentType;
     var headers = {'Content-Type': contentType || (type === 'POST' && 'application/x-www-form-urlencoded; charset=UTF-8') || ''};
-
     assign(headers, options.headers);
-
     if (!options.crossDomain && !headers["X-Requested-With"]) {
       headers["X-Requested-With"] = "XMLHttpRequest";
     }
@@ -611,43 +683,65 @@
       request.setRequestHeader(k, headers[k]);
     }
 
-    var success = options.success, error = options.onerror, complete = options.complete;
+    var loadstart = options.loadstart,
+      progress = options.progress,
+      loadend = options.loadend,
+      success = options.success,
+      localeStart, localeEnd, localeProgress, localeProgressId, progressTimeout, progressCount = 0;
     success = isFunction(success) ? success : UNDEFINED;
-    error = isFunction(error) ? error : UNDEFINED;
-    complete = isFunction(complete) ? complete : UNDEFINED;
+    loadstart = isFunction(loadstart) ? loadstart : UNDEFINED;
+    progress = isFunction(progress) ? progress : UNDEFINED;
+    loadend = isFunction(loadend) ? loadend : UNDEFINED;
 
-    var ret, sid, timeout = options.timeout, on = function (e) {
+    var ret, sid, timeout = options.timeout, RET = ret = {
+      abort: function () {
+        if (on) {
+          on({type: 'abort', isLocaleAbort: _true})
+        }
+      }
+    }, on = function (e) {
+      var type = e.type, _request = request, _dataType = dataType,
+        _success = success, _error = error, _complete = complete, _localeEnd = localeEnd;
+
       if (sid) {
         clearTimeout(sid);
+      }
+      if (localeProgressId) {
+        clearTimeout(localeProgressId)
       }
       if (ret) {
         ret.abort = noop;
       }
-      var type = e.type, _request = request, _dataType = dataType,
-        _success = success, _error = error, _complete = complete;
-      ret = dataType = sid = success = error = complete = request = on = UNDEFINED;
+      ret = dataType = sid = localeProgress = progressCount = progressTimeout = localeProgressId = success = error = complete = loadstart = progress = localeEnd = request = on = UNDEFINED;
       if (_request) {
-        _request.onload = _request.onerror = _request.onabort = _request.ontimeout = _request.onreadystatechange = UNDEFINED;
+        _request.onload = _request.onerror = _request.onabort =
+          _request.onloadstart = _request.onprogress =
+            _request.ontimeout = _request.onreadystatechange = UNDEFINED;
         var status = _request.status, responseType = _request.responseType;
         if ((e.isLocalAbort || e.isLocaleTimeout) && _request.abort) {
           _request.abort()
         }
-        var result;
-        if (type === 'load' && !((status < 200 || status >= 400) && (type === 'error'))) {
+        var script = 'script', load = 'load', result;
+        type = type === load ? status >= 200 && status < 400 ? type : 'error' : type;
+        if (_localeEnd) {
+          _localeEnd(_request, type);
+        }
+        if (!_success && !_error && !_complete && _dataType !== script) {
+          return;
+        }
+        if (type === load) {
           if (responseType === 'arraybuffer' || responseType === 'blob') {
             result = _request.response;
+          } else if (_dataType === 'xml') {
+            result = _request.responseXML;
           } else {
             result = _request.responseText;
             switch (_dataType) {
               case 'json':
                 result = JSON.parse(result);
                 break;
-              case 'xml':
-                result = _request.responseXML;
-                break;
-              case 'script':
+              case script:
                 runScript({text: result},/*{nonce:''}*/);
-                break;
             }
           }
           if (_success) {
@@ -662,18 +756,37 @@
       }
     };
 
-    request.onload = request.onerror = on;
+    if (loadstart) {
+      if (request.onloadstart !== UNDEFINED) {
+        request.onloadstart = loadstart
+      } else {
+        localeStart = function () {
+          if (request && loadstart) {
+            loadstart({currentTarget: request, target: request, type: 'loadstart', isLocaleLoadstart: _true})
+          }
+        }
+      }
+    }
+    if (progress) {
+      if (request.onprogress !== UNDEFINED) {
+        request.onprogress = progress
+      } else {
+        progressTimeout = Math.min(Math.max((timeout | 0) / 100, 100), 100);
+        localeProgress = function () {
+          if (localeProgress && progress && request && ++progressCount < 99) {
+            localeProgressId = setTimeout(localeProgress, progressTimeout);
+            progress({currentTarget: request, progress: progressCount, target: request, type: 'progress', isLocaleProgress: _true})
+          }
+        }
+      }
+    }
 
+    request.onload = request.onerror = on;
     if (request.onabort !== UNDEFINED) {
       request.onabort = on;
     } else {
       request.onreadystatechange = function () {
-        // Check readyState before timeout as it changes
         if (on && request && request.readyState === 4) {
-          // Allow onerror to be called first,
-          // but that will not handle a native abort
-          // Also, save errorCallback to a variable
-          // as xhr.onerror cannot be accessed
           setTimeout(function () {
             if (on) {
               on({type: 'abort'});
@@ -682,6 +795,25 @@
         }
       }
     }
+
+    if (loadend) {
+      if (request.onloadend !== UNDEFINED) {
+        request.onloadend = function (event) {
+          var _loadend = loadend;
+          event.currentTarget.onloadend = UNDEFINED;
+          _loadend(event)
+        }
+      } else {
+        localeEnd = function (request, type) {
+          setTimeout(function () {
+            var _loadend = loadend, target = request, originalType = type;
+            loadend = request = type = UNDEFINED;
+            _loadend({type: 'loadend', currentTarget: target, target: target, originalType: originalType, isLocaleLoadend: _true})
+          })
+        }
+      }
+    }
+
     if (timeout > 0) {
       request.timeout = timeout;
       if (request.ontimeout !== UNDEFINED) {
@@ -697,40 +829,34 @@
         }, timeout)
       }
     }
-
-    request.onerror = function () {
-      if (options.error) options.error()
-    };
-
-    request.send(body);
-    return ret = {
-      abort: function () {
-        if (on) {
-          on({type: 'abort', isLocaleAbort: _true})
-        }
-      }
+    if (localeStart) {
+      localeStart();
     }
+    if (localeProgress) {
+      localeProgressId = setTimeout(localeProgress, progressTimeout)
+    }
+    request.send(body);
+    return RET
   }
 
   /**
    * @alias $
    */
   assign($, {
-    get: function (/* url, data, success, dataType */) {
-      return ajax(parseArguments.apply(_null, arguments))
+    get: function (url, data, success, dataType) {
+      return ajax(url, data, success, dataType)
     },
 
-    post: function (/* url, data, success, dataType */) {
-      var options = parseArguments.apply(_null, arguments);
-      options.type = 'POST';
-      return ajax(options)
+    post: function (url, data, success, dataType) {
+      return ajax(url, data, success, dataType, 'POST')
     },
 
-    getJSON: function (/* url, data, success */) {
-      var options = parseArguments.apply(_null, arguments);
+    getJSON: function (url, data, success) {
+      var options = parseArguments();
       options.dataType = 'json';
-      return ajax(options)
+      return ajax(url, data, success, 'json')
     },
+    loadImage: loadImage,
     tryDelete: tryDelete,
     runScript: runScript,
     ajax: ajax,
@@ -1142,7 +1268,7 @@
         once = !!options.once;
         eventOption = {capture: _false, passive: options.passive}
       } else {
-        once = options===_true;
+        once = options === _true;
       }
       event.fn = _fn;
       event.sel = _sel;
@@ -1239,6 +1365,7 @@
   function addEventListener(el, type, listener, options) {
     el.addEventListener(type, listener, options)
   }
+
   function eventProxy(event) {
     var currentTarget = event.currentTarget, target = event.target;
     var handlersMap = currentTarget[jqlEventListenersMapName];
@@ -1255,6 +1382,7 @@
     });
     deleteHandlersMap(currentTarget, handlersMap)
   }
+
   function removeEventOne(handlers, handlersMap, currentHandler, targetHandler, currentElement, type) {
     handlers.splice(handlers.indexOf(currentHandler), 1);
     if (!handlers.length) {
