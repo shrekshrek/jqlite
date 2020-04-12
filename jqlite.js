@@ -14,11 +14,13 @@
     slice = tempArray.slice,
     indexOf = tempArray.indexOf,
     doc = document,
-    hasOwnProperty = Object.prototype.hasOwnProperty,
-    assign = Object.assign,
+    Obj = Object,
+    hasOwnProperty = Obj.prototype.hasOwnProperty,
+    assign = Obj.assign,
+    keys = Obj.keys,
     UNDEFINED = undefined, _false = false,
     _true = true,
-    _null = null,
+    NULL = null,
     fragmentRE = /^\s*<(\w+|!)[^>]*>/,
     tempTable = 'table',
     tempTableRow = 'tr',
@@ -32,7 +34,8 @@
       '*': 'div'
     },
     head = doc.querySelector('head'),
-    jqlEventListenersMapName = '__jql_EventListenersMap';
+    jqlEventListenersMapName = '__jql__EventListenersMap',
+    jqlDataMapName = '__jql__DataMap';
 
 
   var cssNumber = {
@@ -105,7 +108,7 @@
   }
 
   function isPlainObject(obj) {
-    return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) === Object.prototype
+    return isObject(obj) && !isWindow(obj) && Obj.getPrototypeOf(obj) === Obj.prototype
   }
 
   function isFunction(obj) {
@@ -116,6 +119,10 @@
     return typeof obj === "string"
   }
 
+  function iifString(obj) {
+    return isString(obj) ? obj : ''
+  }
+
   function isNumberT(obj) {
     return typeof obj === "number"
   }
@@ -123,6 +130,11 @@
   function isNumber(obj) {
     return isNumberT(obj) && isFinite(obj)
   }
+
+  function iifNumber(obj) {
+    return isNumber(obj) || 0
+  }
+
 
   function isBoolean(obj) {
     return typeof obj === "boolean"
@@ -198,7 +210,7 @@
    * @return {$Obj|void|*}
    */
   var $ = window.$ = function (selector, context) {
-    var elems;
+    var nodes;
     if (!selector) {
       return new $Obj()
     } else if (is$(selector)) {
@@ -210,38 +222,38 @@
         if (!(name in containers)) {
           name = '*';
         }
-        elems = innerHTMLToTemp(selector, name).children;
+        nodes = innerHTMLToTemp(selector, name).children;
       } else {
-        elems = query(context || doc, selector)
+        nodes = query(context || doc, selector)
       }
     } else if (isArray(selector) || isNodeList(selector) || isHTMLCollection(selector)) {
-      elems = selector
+      nodes = selector
     } else if (isObject(selector)) {
-      elems = [selector]
+      nodes = [selector]
     } else if (isFunction(selector)) {
       return ready(selector)
     }
-    return new $Obj(elems)
+    return new $Obj(nodes)
   };
 
 
-  function $ObjMerge(_this, elems) {
+  function $ObjMerge(_this, nodes) {
     var count = 0;
-    for (var i = 0, len = elems ? elems.length : 0, elem; i < len; i++) {
-      elem = elems[i];
+    for (var i = 0, len = nodes ? nodes.length : 0, elem; i < len; i++) {
+      elem = nodes[i];
       if (isArray(elem) || isNodeList(elem) || isHTMLCollection(elem) || is$(elem)) {
         $ObjMerge(_this, elem);
-      } else if (indexOf.call(_this, elems) === -1) {
+      } else if (elem && indexOf.call(_this, elem) === -1) {
         count++;
-        _this[i] = elems[i];
+        _this[i] = nodes[i];
       }
     }
     _this.length += count;
   }
 
-  function $Obj(elems) {
+  function $Obj(nodes) {
     this.length = 0;
-    $ObjMerge(this, elems)
+    $ObjMerge(this, nodes)
   }
 
   function extend(target, source, deep) {
@@ -281,7 +293,7 @@
   function eachI(arr, callback, context) {
     if (arr) {
       for (var i = 0, l = arr.length; i < l; i++) {
-        if (callback.call(context || arr[i], i, arr[i]) === _false) {
+        if (callback.call(context || arr[i], i, arr[i], arr) === _false) {
           break
         }
       }
@@ -292,8 +304,8 @@
   function eachIn(obj, callback, context) {
     if (isObject(obj)) {
       for (var key in obj) {
-        if (hasOwnProperty.call(obj, key) && callback.call(context || obj[key], key, obj[key]) === _false) {
-          return obj
+        if (hasOwnProperty.call(obj, key) && callback.call(context || obj[key], key, obj[key], obj) === _false) {
+          break
         }
       }
     }
@@ -309,7 +321,7 @@
         console.error(e);
       }
       if (!xml || xml.getElementsByTagName("parsererror").length) {
-        xml = _null;
+        xml = NULL;
         console.error("Invalid XML: ", data)
       }
     }
@@ -370,6 +382,33 @@
     return f
   }
 
+  function initCap(words) {
+    return words[0].toUpperCase() + words.slice(1);
+  }
+
+  function invertCap(words) {
+    return words ? words[0].toLowerCase() + words.slice(1) : words;
+  }
+
+  var aCharCode = 97;
+  var zCharCode = 122;
+  var ACharCode = 65;
+  var ZCharCode = 90;
+
+  function invertCase(words) {
+    if (!words) {
+      return words
+    }
+    var a = [];
+    for (var i = 0, l = words.length, ch, code; i < l; i++) {
+      ch = words[0];
+      code = ch.charCodeAt(0);
+      a[i] = code >= aCharCode && code <= zCharCode ? ch.toUpperCase() :
+        code >= ACharCode && code <= ZCharCode ? ch.toLowerCase() : ch;
+    }
+    return a.join('')
+  }
+
   /**
    * @alias $
    */
@@ -396,7 +435,9 @@
     isEmpty: isEmpty,
     isFunction: isFunction,
     isString: isString,
+    iifString: iifString,
     isNumber: isNumber,
+    iifNumber: iifNumber,
     isBoolean: isBoolean,
     isArray: isArray,
     isDate: isDate,
@@ -418,7 +459,14 @@
     contains: contains,
     each: each,
     eachI: eachI,
-    eachIn: eachIn
+    eachIn: eachIn,
+    initCap: initCap,
+    invertCap: invertCap,
+    invertCase: invertCase,
+    aCharCode: aCharCode,
+    zCharCode: zCharCode,
+    ACharCode: ACharCode,
+    ZCharCode: ZCharCode,
   });
 
 //-------------------------------------------------------------------------------------------------------------ajax:
@@ -426,7 +474,7 @@
     if (isObject(data)) {
       var arr = [], v;
       for (var name in data) {
-        if (hasOwnProperty.call(data, name) && (v = data[name]) != _null) {
+        if (hasOwnProperty.call(data, name) && (v = data[name]) != NULL) {
           arr.push(encodeURIComponent(name) + '=' + encodeURIComponent(v))
         }
       }
@@ -550,7 +598,7 @@
     if (timeout > 0) {
       sid = setTimeout(function () {
         if (sid) {
-          sid = _null;
+          sid = NULL;
           if (on) {
             on({type: 'timeout'})
           }
@@ -595,7 +643,7 @@
           var _callback = callback;
           arrCallback = callback = UNDEFINED;
           arr[arr.length] = notError;
-          _callback.apply(_null, arr)
+          _callback.apply(NULL, arr)
         }
       };
       for (var i = 0; i < l; i++) {
@@ -821,7 +869,7 @@
       } else if (isAsync) {
         sid = setTimeout(function () {
           if (sid) {
-            sid = _null;
+            sid = NULL;
             if (on) {
               on({type: 'timeout', isLocaleTimeout: _true})
             }
@@ -878,6 +926,30 @@
     }
   }
 
+  function getRemoveKeys(isNull, key) {
+    return isNull ? isArray(key) ? key : isObject(key) ? keys(key) : [key] : UNDEFINED;
+  }
+
+  function removeValueEach(keys, removeFn) {
+    for (var i = 0, l = keys && keys.length; i < l; i++) {
+      removeFn(keys[i])
+    }
+  }
+
+  function getData(el) {
+    if (!el) {
+      return NULL
+    }
+    var data = el[jqlDataMapName];
+    if (!data) {
+      data = el[jqlDataMapName] = {};
+      eachIn(el.dataset, function (key, value) {
+        data[key] = value;
+      })
+    }
+    return data
+  }
+
   function handleEventReturn(result, evt) {
     if (result === _false) {
       if (evt.cancelable) {
@@ -914,9 +986,144 @@
     return _false
   }
 
+
+  function getOuterSize(node, dimension, includeMargins, dimensionProperty) {
+    dimensionProperty = dimensionProperty || initCap(dimensionProperty);
+    var margin = dimensionProperty === 'Width' ? ['marginLeft', 'marginRight'] : ['marginTop', 'marginBottom'];
+    if (isElement(node)) {
+      var size = node['offset' + dimensionProperty];
+      if (includeMargins) {
+        var styles = getComputedStyle(node);
+        return size + (parseInt(styles[margin[0]]) || 0) + (parseInt(styles[margin[1]]) || 0);
+      }
+      return size;
+    } else {
+      return getInnerSize(node, dimension)
+    }
+  }
+
+  function innerSize($this, name, value) {
+    return value === UNDEFINED ? getInnerSize($this[0], name) : $this.css(name, value)
+  }
+
+  function outerSize($this, name, valueOrIncludeMargins) {
+    return valueOrIncludeMargins === UNDEFINED || isBoolean(valueOrIncludeMargins) ? getOuterSize(this[0], name, valueOrIncludeMargins) : this.css(name, valueOrIncludeMargins)
+  }
+
+  var cssNormalTransform = $.cssNormalTransform = {
+    letterSpacing: "0",
+    fontWeight: "400"
+  }, toDataSetKey = $.toDataSetKey = function (name) {
+    if (iifString(name)) {
+      if (name.indexOf('-') > -1) {
+        var key = name.split('-');
+        for (var l = key.length, i = 1, k; i < l; i++) {
+          if ((k = key[i])) {
+            key[i] = initCap(k)
+          }
+        }
+        return key.join('')
+      }
+      return name
+    } else {
+      return ''
+    }
+  }, toStyleNameList = $.toStyleNameList = function (name) {
+    name = toDataSetKey(name.replace(/^-/, ''));
+    if (!name) {
+      return
+    }
+    name = initCap(name);
+    var webkitName = 'webkit' + name;
+    var mozName = 'moz' + name;
+    var msName = 'ms' + name;
+    return [invertCap(name), webkitName, mozName, msName]
+  }, catchCurrentStyle = {
+    getPropertyValue: function getPropertyValue() {
+      return '';
+    }
+  }, getComputedStyle = $.getComputedStyle = function (element) {
+    if (!element) {
+      return catchCurrentStyle
+    }
+    try {
+      return (element.ownerDocument.defaultView || window).getComputedStyle(element)
+    } catch (e) {
+      return element.style || catchCurrentStyle
+    }
+  }, getStyleValue = $.getStyleValue = function (element, nameList) {
+    if (!element) {
+      return UNDEFINED
+    }
+    var currentStyle = getComputedStyle(element), value;
+    if (!isArray(nameList)) {
+      return isString(value = currentStyle[nameList]) ? value : UNDEFINED;
+    }
+    for (var i = 0, l = nameList.length; i < l; i++) {
+      if (isString(value = currentStyle[nameList[i]])) {
+        return value;
+      }
+    }
+  }, setStyleValue = $.setStyleValue = function (elements, nameList, value) {
+    if (likeArray(elements)) {
+      elements = [elements];
+    }
+    var element = elements[0];
+    if (!element) {
+      return
+    }
+    if (!isArray(nameList)) {
+      nameList = [nameList];
+    }
+    value = iifString(isFunction(value) ? value() : (isNumber(value) ? (value + 'px') : value)).trim();
+    var isAddTogether = false, unit;
+    if (value && (!value.indexOf('+=') || !value.indexOf('-='))) {
+      unit = value.match(/([^\d.\s]*)$/)[0] || 'px';
+      value = parseFloat(value.replace('=', ''));
+      isAddTogether = true
+    }
+    var currentStyle = getComputedStyle(element);
+    var validName;
+    for (var ni = 0, nl = nameList.length, name; ni < nl; ni++) {
+      if (isString(currentStyle[name = nameList[ni]])) {
+        validName = name;
+        break;
+      }
+    }
+    if (validName) {
+      for (var i = 0, l = elements.length; i < l; i++) {
+        if ((element = elements[i])) {
+          if (isAddTogether) {
+            value = (parseFloat(getStyleValue(element, validName)) || 0) + value + unit;
+          }
+          element.style && element.style.setProperty(validName, value);
+        }
+      }
+    }
+  };
+
+  function getInnerSize(node, dimension, dimensionProperty) {
+    if (!node) {
+      return 0;
+    }
+    dimensionProperty = dimensionProperty || initCap(dimensionProperty);
+    var client = "client" + dimensionProperty;
+    if (isDocument(node)) {
+      var html = node.documentElement;
+      var body = node.body;
+      var scroll = "scroll" + dimensionProperty, offset = "offset" + dimensionProperty;
+      var htmlSize = html ? Math.max(html[scroll], html[offset], html[client]) : 0;
+      var bodySize = body ? Math.max(body[scroll], body[offset], body[client]) : 0;
+      return Math.max(bodySize, htmlSize);
+    }
+    return isWindow(node) ? node['inner' + dimensionProperty] : isElement(node) ? node[client] : 0;
+  }
+
   assign($Obj.prototype, $.fn = {
     ready: ready,
-
+    byNodes: function (nodes) {
+      return new $Obj(nodes)
+    },
     get: function (idx) {
       return idx === UNDEFINED ? this : this[idx]
     },
@@ -926,11 +1133,11 @@
     },
 
     first: function () {
-      return this.length ? this.eq(0) : _null
+      return this.length ? this.eq(0) : NULL
     },
 
     last: function () {
-      return this.length ? this.eq(this.length - 1) : _null
+      return this.length ? this.eq(this.length - 1) : NULL
     },
     filter: function (selector) {
       var $o = new $Obj();
@@ -945,18 +1152,18 @@
       if (!selector) {
         return this
       } else {
-        var elems = new $Obj();
+        var $find = new $Obj();
         this.each(function (i, el) {
-          elems.add($(selector, el))
+          $find.add($(selector, el))
         });
-        return elems
+        return $find
       }
     },
 
     add: function (selector, context) {
-      var elems = $(selector, context), _this = this, el;
-      for (var i = 0, l = elems.length; i < l; i++) {
-        if (indexOf.call(_this, el = elems[i]) === -1) {
+      var nodes = $(selector, context), _this = this, el;
+      for (var i = 0, l = nodes.length; i < l; i++) {
+        if ((el = nodes[i]) && indexOf.call(_this, el) === -1) {
           _this[_this.length++] = el
         }
       }
@@ -964,63 +1171,70 @@
     },
 
     each: function (callback) {
-      each(this, callback);
-      return this
+      return eachI(this, callback);
     },
 
     empty: function () {
       return this.each(function (i, el) {
-        el.innerHTML = ''
+        if (isElement(el)) {
+          $(this.children()).remove().empty();
+          el.innerHTML = '';
+        }
       })
     },
 
     parent: function () {
-      var elems = new $Obj();
+      var nodes = new $Obj();
       this.each(function (i, el) {
-        elems.add(el.parentNode)
+        nodes.add(el.parentNode)
       });
-      return elems
+      return nodes
     },
 
     children: function () {
-      var elems = new $Obj();
+      var nodes = new $Obj();
       this.each(function (i, el) {
-        elems.add(el.children)
+        nodes.add(el.children)
       });
-      return elems
+      return nodes
     },
 
     clone: function () {
-      var elems = new $Obj();
+      var nodes = new $Obj();
       this.each(function (i, el) {
-        elems.add(el.cloneNode(_true))
+        nodes.add(el.cloneNode(_true))
       });
-      return elems
+      return nodes
     },
     detach: function (selector) {
       return (selector ? this.filter(selector) : this).each(function (i, el) {
-        var par = el.parentNode;
+        var par = el && el.parentNode;
         if (par && par.removeChild) {
           par.removeChild(el)
         }
       })
     },
     remove: function (selector) {
-      return (selector ? this.filter(selector) : this).offAll().detach();
+      return (selector ? this.filter(selector) : this).each(function (i, el) {
+        $(el).offAll().detach();
+        if (el && el[jqlDataMapName]) {
+          tryDelete(el, jqlDataMapName);
+        }
+      });
     },
 
     html: function (html) {
       return arguments.length ?
         this.each(function (i, el) {
           el.innerHTML = html
-        }) : ((html = this[0]) ? html.innerHTML : _null)
+        }) : ((html = this[0]) ? html.innerHTML : NULL)
     },
 
     text: function (text) {
       return arguments.length ?
         this.each(function (i, el) {
           el.textContent = text
-        }) : ((text = this[0]) ? text.textContent : _null)
+        }) : ((text = this[0]) ? text.textContent : NULL)
     },
 
     val: function (value) {
@@ -1051,88 +1265,215 @@
     },
 
     data: function (key, value) {
-      if (value !== UNDEFINED) {
-        this.each(function (i, el) {
-          el.dataset[key] = value
+      var _this = this;
+      if (arguments.length > 1) {
+        _this.each(function (i, el) {
+          var data = getData(el);
+          if (!data) {
+            return
+          }
+          data[key] = value
         })
       } else if (isObject(key)) {
-        setValue(this, 'data', key);
-      } else if ((value = this[0])) {
-        return value.dataset[key]
+        setValue(_this, 'data', key);
+      } else {
+        var data = getData(_this[0]);
+        if (data && key !== UNDEFINED) {
+          return key in data ? data[key] : (value = value.dataset) && ((value = value[key]) !== UNDEFINED) ? data[key] = value : UNDEFINED;
+        }
+        return data
       }
-      return this
+      return _this
     },
-
+    removeData: function (key) {
+      key = getRemoveKeys(arguments.length, key);
+      return this.each(function (i, el) {
+        if (el && (el = el[jqlDataMapName])) {
+          removeValueEach(key || keys(el), function (key) {
+            tryDelete(el, key);
+          })
+        }
+      });
+    },
+    dataset: function (key, value) {
+      var _this = this;
+      if (arguments.length > 1) {
+        _this.each(function (i, el) {
+          if (el && (el = el.dataset)) {
+            el[key] = value
+          }
+        })
+      } else if (isObject(key)) {
+        setValue(_this, 'dataset', key);
+      } else {
+        value = _this[0];
+        var dataset = value && value.dataset;
+        if (dataset && key !== UNDEFINED) {
+          return dataset[key];
+        }
+        return dataset
+      }
+      return _this
+    },
+    removeDataset: function (key) {
+      key = getRemoveKeys(arguments.length, key);
+      return this.each(function (i, el) {
+        if (el && (el = el.dataset)) {
+          removeValueEach(key || keys(el), function (key) {
+            try {
+              delete el[key]
+            } catch (e) {
+            }
+          })
+        }
+      });
+    },
     attr: function (key, value) {
-      if (value !== UNDEFINED) {
-        this.each(function (i, el) {
-          el.setAttribute(key, value)
+      var _this = this;
+      if (arguments.length > 1) {
+        _this.each(function (i, el) {
+          if (el && el.setAttribute) {
+            el.setAttribute(key, value)
+          }
         })
       } else if (isObject(key)) {
-        setValue(this, 'attr', key);
-      } else if ((value = this[0])) {
-        return value.getAttribute(key)
+        setValue(_this, 'attr', key);
+      } else {
+        return (value = _this[0]) && value.getAttribute ? value.getAttribute(key) : UNDEFINED
       }
-      return this
+      return _this
     },
-
+    removeAttr(key) {
+      key = getRemoveKeys(arguments.length, key);
+      return this.each(function (i, el) {
+        if (el && el.removeAttribute) {
+          removeValueEach(key || el.attributes, function (key) {
+            el.removeAttribute(key)
+          })
+        }
+      });
+    },
     prop: function (key, value) {
-      if (value !== UNDEFINED) {
-        this.each(function (i, el) {
+      var _this = this;
+      if (arguments.length > 1) {
+        _this.each(function (i, el) {
           el[key] = value
         })
       } else if (isObject(key)) {
-        setValue(this, 'prop', key)
-      } else if ((value = this[0])) {
-        return value[key]
-      }
-      return this
-    },
-
-    css: function (key, value) {
-      if (value !== UNDEFINED) {
-        value = isFunction(value) ? value() : checkValue(key, value);
-        this.each(function (i, el) {
-          el.style[key] = value
-        })
-      } else if (isObject(key)) {
-        setValue(this, 'css', key)
-      } else if ((value = this[0])) {
-        return value.style[key] || window.getComputedStyle(value)[key]
-      }
-      return this
-    },
-
-    width: function (outer) {
-      if (!this.length) {
-        return _null;
-      }
-      var node = this[0];
-      if (isWindow(node)) {
-        return node.innerWidth
-      } else if (outer) {
-        var style = window.getComputedStyle(node);
-        return parseInt(style.marginLeft) + parseInt(style.marginRight) + node.offsetWidth
+        setValue(_this, 'prop', key)
       } else {
-        return node.offsetWidth
+        return (value = this[0]) ? value[key] : UNDEFINED
+      }
+      return _this
+    },
+    removeProp(key) {
+      key = getRemoveKeys(arguments.length, key);
+      return this.each(function (i, el) {
+        if (el && key) {
+          removeValueEach(key, function (key) {
+            tryDelete(el, key);
+          })
+        }
+      });
+    },
+    css: function (name, value) {
+      var $this = this;
+      if (isObject(name)) {
+        for (var key in name) {
+          if (hasOwnProperty.call(name, key)) {
+            value = name[key];
+            $this.css(key, value);
+          }
+        }
+        return $this
+      }
+      if (!name) {
+        return
+      }
+      if (name === 'scrollTop' || name === 'scrollLeft') {
+        return $this[name](value)
+      }
+      var nameList = toStyleNameList(name);
+      if (!nameList) {
+        return
+      }
+      if (value != null) {
+        var isNumberSet = /^(width|height|top|left|right|bottom|margin|padding|border)/.text(name);
+        var isColor = !isNumberSet && /(backgound|color)$/.test(name);
+        var elements = $this.filter(isElement);
+        if (elements.length) {
+          setStyleValue(elements, nameList, isNumber(value) ? isNumberSet ? value + 'px' : isColor ? value.toString(16) : value : value);
+        }
+        return $this;
+      }
+      var element = $this[0];
+      if (isElement(element)) {
+        value = getStyleValue(element, nameList);
+        if (value === "normal" && name in cssNormalTransform) {
+          value = cssNormalTransform[name];
+        }
+        return value
       }
     },
-
-    height: function (outer) {
-      if (!this.length) {
-        return _null;
+    offset: function () {
+      var rect, win,
+        elem = this[0];
+      if (!isElement(elem)) {
+        return {top: 0, left: 0}
       }
-      var node = this[0];
-      if (isWindow(node)) {
-        return node.innerHeight
-      } else if (outer) {
-        var style = window.getComputedStyle(node);
-        return (outer ? parseInt(style.marginTop) + parseInt(style.marginBottom) : 0) + node.offsetHeight
+      if (!elem.getClientRects().length) {
+        return {top: 0, left: 0};
+      }
+      // Get document-relative position by adding viewport scroll to viewport-relative gBCR
+      rect = elem.getBoundingClientRect();
+      win = elem.ownerDocument.defaultView;
+      return {
+        top: rect.top + win.pageYOffset,
+        left: rect.left + win.pageXOffset
+      };
+    },
+    position: function () {
+      var $this = this;
+      var elem = $this[0];
+      if (!isElement(elem)) {
+        return
+      }
+      var offsetParent, offset, doc,
+        parentOffset = {top: 0, left: 0};
+      if (getStyleValue(elem, "position") === "fixed") {
+        offset = elem.getBoundingClientRect();
       } else {
-        return node.offsetHeight
+        offset = $this.offset();
+        doc = elem.ownerDocument;
+        offsetParent = elem.offsetParent || doc.documentElement;
+        while (offsetParent &&
+        (offsetParent === doc.body || offsetParent === doc.documentElement) &&
+        getStyleValue(offsetParent, "position") === "static") {
+          offsetParent = offsetParent.parentNode;
+        }
+        if (offsetParent && offsetParent !== elem && offsetParent.nodeType === 1) {
+          parentOffset = domFromNode(offsetParent).offset();
+          parentOffset.top += jQuery.css(offsetParent, "borderTopWidth", true);
+          parentOffset.left += jQuery.css(offsetParent, "borderLeftWidth", true);
+        }
       }
+      return {
+        top: offset.top - parentOffset.top - jQuery.css(elem, "marginTop", true),
+        left: offset.left - parentOffset.left - jQuery.css(elem, "marginLeft", true)
+      };
     },
-
+    width: function (value) {
+      return innerSize(this, 'width', value);
+    },
+    height: function (value) {
+      return innerSize(this, 'height', value)
+    },
+    outerWidth: function (valueOrIncludeMargins) {
+      return outerSize(this, 'width', valueOrIncludeMargins);
+    },
+    outerHeight: function (valueOrIncludeMargins) {
+      return outerSize(this, 'height', valueOrIncludeMargins);
+    },
     show: function () {
       this.css('display', 'block')
     },
@@ -1179,10 +1520,12 @@
     },
 
     append: function (context) {
-      var elems = $(context);
+      var $context = $(context), isHtml = isString(context);
       return this.each(function (i, el) {
-        if (i > 0) elems = elems.clone();
-        elems.each(function (j, el2) {
+        if (isHtml && i > 0) {
+          $context = $context.clone()
+        }
+        $context.each(function (j, el2) {
           el.appendChild(el2)
         })
       })
@@ -1413,4 +1756,5 @@
   }
 
   return $
+
 })));
